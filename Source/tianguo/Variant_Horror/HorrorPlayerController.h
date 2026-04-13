@@ -8,6 +8,7 @@
 
 class UInputMappingContext;
 class UHorrorUI;
+class UInputAction;
 
 /**
  *  Player Controller for a first person horror game
@@ -55,6 +56,22 @@ protected:
 	UPROPERTY(EditAnywhere, Config, Category = "Input|Touch Controls")
 	bool bForceTouchControls = false;
 
+	/** Input action for starting recording */
+	UPROPERTY(EditAnywhere, Category = "Input|Ghost")
+	UInputAction* RecordAction;
+
+	/** Input action for spawning a ghost */
+	UPROPERTY(EditAnywhere, Category = "Input|Ghost")
+	UInputAction* ReplayAction;
+
+	/** Ghost blueprint class to spawn (set in blueprint instance) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input|Ghost")
+	TSubclassOf<class AHorrorGhostCharacter> GhostBlueprintClass;
+	
+	/** Duration (in seconds) for ghost recording */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input|Ghost", meta = (ClampMin = "0.1", ClampMax = "60.0"))
+	float RecordDuration = 3.0f;
+
 	/** Gameplay Initialization */
 	virtual void BeginPlay() override;
 
@@ -63,6 +80,12 @@ protected:
 
 	/** Input mapping context setup */
 	virtual void SetupInputComponent() override;
+
+	/** Start recording ghost input */
+	void OnStartRecord();
+
+	/** Spawn a ghost at current location */
+	void OnSpawnGhost();
 
 	/** Returns true if the player should use UMG touch controls */
 	bool ShouldUseTouchControls() const;

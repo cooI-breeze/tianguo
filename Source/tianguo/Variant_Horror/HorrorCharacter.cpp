@@ -2,6 +2,7 @@
 
 
 #include "Variant_Horror/HorrorCharacter.h"
+#include "record/GhostRecorder.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -22,6 +23,9 @@ AHorrorCharacter::AHorrorCharacter()
 	SpotLight->AttenuationRadius = 1050.0f;
 	SpotLight->InnerConeAngle = 18.7f;
 	SpotLight->OuterConeAngle = 45.24f;
+
+	// create ghost recorder component
+	GhostRecorder = CreateDefaultSubobject<UGhostRecorder>(TEXT("GhostRecorder"));
 }
 
 void AHorrorCharacter::BeginPlay()
@@ -67,6 +71,12 @@ void AHorrorCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 void AHorrorCharacter::DoStartSprint()
 {
+	// record sprint press
+	if (GhostRecorder)
+	{
+		GhostRecorder->RecordActionPressed(EGhostAction::SprintPress);
+	}
+
 	// set the sprinting flag
 	bSprinting = true;
 
@@ -79,11 +89,16 @@ void AHorrorCharacter::DoStartSprint()
 		// call the sprint state changed delegate
 		OnSprintStateChanged.Broadcast(true);
 	}
-
 }
 
 void AHorrorCharacter::DoEndSprint()
 {
+	// record sprint release
+	if (GhostRecorder)
+	{
+		GhostRecorder->RecordActionReleased(EGhostAction::SprintRelease);
+	}
+
 	// set the sprinting flag
 	bSprinting = false;
 
@@ -147,13 +162,22 @@ void AHorrorCharacter::SprintFixedTick()
 
 AActor* AHorrorCharacter::GetLookedAtInteractable()
 {
-	FVector CameraLocation;
+	FVector Start;
 	FRotator CameraRotation;
-	GetActorEyesViewPoint(CameraLocation, CameraRotation);
-
-	FVector Start = CameraLocation;
-	FVector End = Start + CameraRotation.Vector() * 300.0f;
-
+    
+	// 优先使用第一人称摄像机组件
+	if (UCameraComponent* Camera = GetFirstPersonCameraComponent())
+	{
+		Start = Camera->GetComponentLocation();
+		CameraRotation = Camera->GetComponentRotation();
+      FRotator  Rotation1114514=Camera->GetRelativeRotation();
+	}
+    
+	FVector End = Start + CameraRotation.Vector() * 300.0f; 
+    
+	// 可视化调试线
+	//DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 2.0f, 0, 1.0f);
+    
 	FHitResult HitResult;
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
@@ -167,10 +191,37 @@ AActor* AHorrorCharacter::GetLookedAtInteractable()
 
 void AHorrorCharacter::DoInteract()
 {
+	// record interact action
+	if (GhostRecorder)
+	{
+		GhostRecorder->RecordActionPressed(EGhostAction::Interact);
+	}
+
 	AActor* HitActor = GetLookedAtInteractable();
 	if (HitActor)
 	{
 		// Blueprint可在此事件中处理交互
 		BP_OnInteract(HitActor);
 	}
+}
+
+void AHorrorCharacter::DoMove(float Right, float Forward)
+{
+	// record movement input
+	if (GhostRecorder)
+	{
+		GhostRecorder->RecordMoveInput(Right, Forward);
+	}
+
+	// call parent implementation
+	Super::DoMove(Right, Forward);
+}
+void AHorrorCharacter::DoAim(float Yaw, float Pitch)
+{
+	// record look input
+	if (GhostRecorder)
+	{
+		GhostRecorder->RecordLookInput(Yaw, Pitch);
+	}
+	Super::DoAim(Yaw, Pitch);
 }

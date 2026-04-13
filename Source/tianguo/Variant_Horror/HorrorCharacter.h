@@ -9,6 +9,7 @@
 class USpotLightComponent;
 class UInputAction;
 class AActor;
+class UGhostRecorder;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateSprintMeterDelegate, float, Percentage);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSprintStateChangedDelegate, bool, bSprinting);
@@ -41,6 +42,10 @@ protected:
 
 	/** If true, we're recovering stamina */
 	bool bRecovering = false;
+
+	/** Ghost recorder component */
+	UPROPERTY()
+	UGhostRecorder* GhostRecorder;
 
 	/** Default walk speed when not sprinting or recovering */
 	UPROPERTY(EditAnywhere, Category="Walk")
@@ -80,6 +85,9 @@ public:
 	/** Delegate called when we start and stop sprinting */
 	FSprintStateChangedDelegate OnSprintStateChanged;
 
+	/** Get the ghost recorder component */
+	UGhostRecorder* GetGhostRecorder() const { return GhostRecorder; }
+
 protected:
 
 	/** Constructor */
@@ -107,6 +115,12 @@ protected:
 	/** Interact with the currently looked-at object */
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void DoInteract();
+
+	/** Override move input to record */
+	virtual void DoMove(float Right, float Forward) override;
+
+	/** Override aim input to record */
+	virtual void DoAim(float Yaw, float Pitch) override;
 
 	/** 射线检测，返回命中的Actor（无命中返回nullptr） */
 	UFUNCTION(BlueprintCallable, Category="Interaction")
