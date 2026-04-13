@@ -141,6 +141,7 @@ void AHorrorGhostCharacter::StartReplay()
 void AHorrorGhostCharacter::StopReplay()
 {
 	bReplaying = false;
+	Destroy();
 }
 
 void AHorrorGhostCharacter::ApplyFrame(const FGhostFrame& Frame)
